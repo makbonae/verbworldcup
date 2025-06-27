@@ -63,6 +63,9 @@
       document.getElementById("instruction").style.display = "none";
       document.getElementById("tournament").style.display = "block";
       const { data, error } = await client.from('wordlist').select();
+    
+      console.log("불러온 데이터 수:", data?.length);
+      
       if (error) return alert("데이터 불러오기 실패");
       allWords = shuffle(data).slice(0, 64);
       runTournament(allWords);
