@@ -78,8 +78,10 @@
         if (index >= list.length) {
           if (nextRound.length === 1) {
             showResult(nextRound[0]);
-          } else {
+          } else if (nextRound.length > 1) {
             playRound(nextRound);
+          } else {
+            alert("선택된 항목이 없습니다. 게임을 종료합니다.");
           }
           return;
         }
