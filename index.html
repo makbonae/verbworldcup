@@ -65,53 +65,58 @@
       const { data, error } = await client.from('wordlist').select();
       if (error) return alert("데이터 불러오기 실패");
       allWords = shuffle(data).slice(0, 64);
-      playRound(allWords);
+      runTournament(allWords);
     };
 
-    function playRound(list) {
-      document.getElementById("roundTitle").innerText = `${list.length}강`;
+    function runTournament(entries) {
+      const roundTitle = document.getElementById("roundTitle");
       const matchArea = document.getElementById("matchArea");
-      matchArea.innerHTML = '';
-      let nextRound = [];
 
-      function nextMatch(index = 0) {
-        if (index >= list.length) {
+      const nextRound = [];
+      let currentIndex = 0;
+
+      roundTitle.innerText = `${entries.length}강`;
+
+      function showMatch() {
+        if (currentIndex >= entries.length) {
           if (nextRound.length === 1) {
             showResult(nextRound[0]);
           } else if (nextRound.length > 1) {
-            playRound(nextRound);
+            runTournament(nextRound);
           } else {
             alert("선택된 항목이 없습니다. 게임을 종료합니다.");
           }
           return;
         }
 
-        const left = list[index];
-        const right = list[index + 1];
+        const left = entries[currentIndex];
+        const right = entries[currentIndex + 1];
 
         if (!right) {
           nextRound.push(left);
-          nextMatch(index + 2);
+          currentIndex += 2;
+          showMatch();
           return;
         }
 
         matchArea.innerHTML = `
-          <div class="card" onclick="choose(${index})">
+          <div class="card" onclick="choose(${currentIndex})">
             <h3>${left.verb}</h3><p>${left.desc}</p>
           </div>
-          <div class="card" onclick="choose(${index + 1})">
+          <div class="card" onclick="choose(${currentIndex + 1})">
             <h3>${right.verb}</h3><p>${right.desc}</p>
           </div>
         `;
 
         window.choose = (chosenIndex) => {
-          const winner = list[chosenIndex];
+          const winner = entries[chosenIndex];
           nextRound.push(winner);
-          nextMatch(index + 2);
+          currentIndex += 2;
+          setTimeout(showMatch, 100); // 💡 stack overflow 방지
         };
       }
 
-      nextMatch();
+      showMatch();
     }
 
     function showResult(winner) {
