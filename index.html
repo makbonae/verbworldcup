@@ -75,7 +75,6 @@
       let nextRound = [];
 
       function nextMatch(index = 0) {
-        // 🔐 마지막 한 개 남았을 때는 자동 진출
         if (index >= list.length) {
           if (nextRound.length === 1) {
             showResult(nextRound[0]);
@@ -88,7 +87,6 @@
         const left = list[index];
         const right = list[index + 1];
 
-        // 🔐 오른쪽이 없으면 부전승 처리
         if (!right) {
           nextRound.push(left);
           nextMatch(index + 2);
@@ -102,7 +100,7 @@
           <div class="card" onclick="choose(${index + 1})">
             <h3>${right.verb}</h3><p>${right.desc}</p>
           </div>
-    `    ;
+        `;
 
         window.choose = (chosenIndex) => {
           const winner = list[chosenIndex];
@@ -113,7 +111,6 @@
 
       nextMatch();
     }
-
 
     function showResult(winner) {
       document.getElementById("tournament").style.display = "none";
