@@ -132,17 +132,25 @@
     document.getElementById("tournament").style.display = "none";
     document.getElementById("resultArea").style.display = "block";
 
-    const finals = resultsByRound.at(-1)?.filter(r => r.loser.id !== winner.id).map(r => r.loser.verb) || [];
-    const semis = resultsByRound.at(-2)?.filter(r => r.loser.id !== winner.id).map(r => r.loser.verb) || [];
-    const quarters = resultsByRound.at(-3)?.filter(r => r.loser.id !== winner.id).map(r => r.loser.verb) || [];
+    // 각 라운드별 탈락자만 수집 (중복 없이)
+    function getLosers(roundIndex) {
+      const round = resultsByRound.at(roundIndex) || [];
+      return [...new Set(
+        round.map(r => r.loser).filter(w => w.id !== winner.id).map(w => w.verb)
+      )];
+    }
+
+    const finals = getLosers(-1);
+    const semis = getLosers(-2);
+    const quarters = getLosers(-3);
 
     const summary = document.createElement("table");
     summary.innerHTML = `
       <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
-      <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>
-      <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>
-      <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>
-    `;
+      <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ') || '없음'}</td></tr>
+      <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ') || '없음'}</td></tr>
+      <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ') || '없음'}</td></tr>
+  `  ;
     document.getElementById("summaryWrapper").appendChild(summary);
     document.getElementById("roundCounter").innerText = roundCount;
 
