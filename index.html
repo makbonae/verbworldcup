@@ -4,17 +4,14 @@
   <meta charset="UTF-8">
   <title>능력 동사 월드컵</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 0; }
-    #inputArea, #instruction, #tournament, #resultArea, #repeatButton, #pdfButton { display: none; margin-top: 50px; }
+    #inputArea, #instruction, #tournament, #resultArea { display: none; margin-top: 50px; }
     .input-container { margin-top: 150px; }
     .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     .hidden { display: none; }
-    table { margin: 20px auto 60px auto; border-collapse: collapse; width: 80%; background: #fff; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-    th[colspan] { background: #f0f0f0; }
+    table { margin: 20px auto; border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 10px; }
   </style>
 </head>
 <body>
@@ -39,13 +36,7 @@
 
 <div id="resultArea">
   <h2>📊 선택 결과 요약</h2>
-  <div id="summaryContainer"></div>
-  <div id="repeatButton">
-    <button onclick="startTournament()">한 번 더 진행하기</button>
-  </div>
-  <div id="pdfButton">
-    <button onclick="downloadPDF()">📄 PDF 저장하기</button>
-  </div>
+  <table id="summaryTable"></table>
 </div>
 
 <script>
@@ -57,8 +48,6 @@
     let studentId = '';
     let studentName = '';
     let allWords = [];
-    let roundCount = 0;
-    let history = [];
 
     document.getElementById("inputArea").style.display = "block";
 
@@ -71,19 +60,14 @@
     };
 
     window.startTournament = async function () {
-      if (roundCount >= 3) return alert("최대 3번까지만 참여할 수 있습니다.");
-
       document.getElementById("instruction").style.display = "none";
-      document.getElementById("resultArea").style.display = "none";
       document.getElementById("tournament").style.display = "block";
-      document.getElementById("repeatButton").style.display = "none";
-      document.getElementById("pdfButton").style.display = "none";
-
       const { data, error } = await client.from('wordlist').select();
+    
+      console.log("불러온 데이터 수:", data?.length);
+      
       if (error) return alert("데이터 불러오기 실패");
-
       allWords = shuffle(data).slice(0, 64);
-      history = [{ stage: 64, entries: [...allWords] }];
       runTournament(allWords);
     };
 
@@ -100,9 +84,10 @@
         if (currentIndex >= entries.length) {
           if (nextRound.length === 1) {
             showResult(nextRound[0]);
-          } else {
-            history.push({ stage: nextRound.length, entries: [...nextRound] });
+          } else if (nextRound.length > 1) {
             runTournament(nextRound);
+          } else {
+            alert("선택된 항목이 없습니다. 게임을 종료합니다.");
           }
           return;
         }
@@ -130,7 +115,7 @@
           const winner = entries[chosenIndex];
           nextRound.push(winner);
           currentIndex += 2;
-          setTimeout(showMatch, 100);
+          setTimeout(showMatch, 100); // 💡 stack overflow 방지
         };
       }
 
@@ -138,42 +123,29 @@
     }
 
     function showResult(winner) {
-      roundCount++;
       document.getElementById("tournament").style.display = "none";
       document.getElementById("resultArea").style.display = "block";
-      document.getElementById("repeatButton").style.display = roundCount < 3 ? "block" : "none";
-      document.getElementById("pdfButton").style.display = roundCount === 3 ? "block" : "none";
 
-      const container = document.getElementById("summaryContainer");
-      const table = document.createElement("table");
-      table.innerHTML += `<tr><th colspan="2">🔁 ${roundCount}회차 결과</th></tr>`;
-      table.innerHTML += `<tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>`;
+      const quarters = allWords.slice(0, 8).filter(w => w.id !== winner.id).map(w => w.verb);
+      const semis = allWords.slice(0, 4).filter(w => w.id !== winner.id).map(w => w.verb);
+      const finals = allWords.slice(0, 2).filter(w => w.id !== winner.id).map(w => w.verb);
 
-      const getEliminated = (from, to) => from.filter(e => !to.some(n => n.id === e.id));
-      const getStage = stage => history.find(h => h.stage === stage)?.entries || [];
+      const table = document.getElementById("summaryTable");
+      table.innerHTML = `
+        <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
+        <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>
+        <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>
+        <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>
+      `;
 
-      const top2 = getStage(2);
-      const top4 = getStage(4);
-      const top8 = getStage(8);
-
-      const finals = getEliminated(top2, [winner]);
-      const semis = getEliminated(top4, top2);
-      const quarters = getEliminated(top8, top4);
-
-      if (finals.length) table.innerHTML += `<tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>`;
-      if (semis.length) table.innerHTML += `<tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>`;
-      if (quarters.length) table.innerHTML += `<tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>`;
-
-      container.appendChild(table);
-
-      saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '), roundCount);
+      saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '));
     }
 
-    async function saveResult(final, finals, semis, quarters, round_num) {
+    async function saveResult(final, finals, semis, quarters) {
       const { error } = await client.from('responses').insert([{
         student_id: studentId,
         student_name: studentName,
-        round_num,
+        round_num: 1,
         final,
         finals,
         semis,
@@ -190,20 +162,8 @@
       }
       return arr;
     }
-
-    window.downloadPDF = async function () {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF('p', 'pt', 'a4');
-      const element = document.getElementById("summaryContainer");
-      await html2canvas(element).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const imgHeight = canvas.height * pageWidth / canvas.width;
-        doc.addImage(imgData, 'PNG', 20, 20, pageWidth - 40, imgHeight);
-        doc.save(`${studentId}_${studentName}_결과.pdf`);
-      });
-    }
   });
 </script>
+
 </body>
 </html>
