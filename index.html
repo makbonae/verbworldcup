@@ -70,8 +70,12 @@
   };
 
   window.startTournament = async function () {
+    // 이전 결과 화면에서 숨기기
+    document.querySelectorAll(".round-summary").forEach(el => el.style.display = 'none');
     document.getElementById("instruction").style.display = "none";
     document.getElementById("tournament").style.display = "block";
+    document.getElementById("resultArea").style.display = "none";
+
     const { data, error } = await client.from('wordlist').select();
     if (error) return alert("데이터 불러오기 실패");
 
@@ -136,7 +140,6 @@
     document.getElementById("tournament").style.display = "none";
     document.getElementById("resultArea").style.display = "block";
 
-    // 탈락자만 모으기
     function getLosers(roundIndex) {
       const round = resultsByRound.at(roundIndex) || [];
       return [...new Set(round.map(r => r.loser).filter(w => w.id !== winner.id).map(w => w.verb))];
@@ -157,18 +160,17 @@
         <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ') || '없음'}</td></tr>
       </table>
     `;
-
     document.getElementById("summaryWrapper").appendChild(summary);
     saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '));
 
-    // 다음 라운드 or PDF
     const nextBtn = document.createElement("button");
     nextBtn.className = "next-round-btn";
+
     if (roundCount < 3) {
       nextBtn.innerText = `👉 결과 저장하고 한 번 더! (${roundCount + 1}회차)`;
       nextBtn.onclick = () => {
         roundCount++;
-        summary.appendChild(document.createTextNode("")); // force reflow
+        summary.style.display = "none";
         nextBtn.remove();
         startTournament();
       };
