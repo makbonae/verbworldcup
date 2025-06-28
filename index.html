@@ -4,9 +4,11 @@
   <meta charset="UTF-8">
   <title>능력 동사 월드컵</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 0; }
-    #inputArea, #instruction, #tournament, #resultArea, #repeatButton { display: none; margin-top: 50px; }
+    #inputArea, #instruction, #tournament, #resultArea, #repeatButton, #pdfButton { display: none; margin-top: 50px; }
     .input-container { margin-top: 150px; }
     .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     .hidden { display: none; }
@@ -41,6 +43,9 @@
   <div id="repeatButton">
     <button onclick="startTournament()">한 번 더 진행하기</button>
   </div>
+  <div id="pdfButton">
+    <button onclick="downloadPDF()">📄 PDF 저장하기</button>
+  </div>
 </div>
 
 <script>
@@ -72,6 +77,7 @@
       document.getElementById("resultArea").style.display = "none";
       document.getElementById("tournament").style.display = "block";
       document.getElementById("repeatButton").style.display = "none";
+      document.getElementById("pdfButton").style.display = "none";
 
       const { data, error } = await client.from('wordlist').select();
       if (error) return alert("데이터 불러오기 실패");
@@ -136,38 +142,43 @@
       document.getElementById("tournament").style.display = "none";
       document.getElementById("resultArea").style.display = "block";
       document.getElementById("repeatButton").style.display = roundCount < 3 ? "block" : "none";
+      document.getElementById("pdfButton").style.display = roundCount === 3 ? "block" : "none";
 
       const container = document.getElementById("summaryContainer");
       const table = document.createElement("table");
       table.innerHTML += `<tr><th colspan="2">🔁 ${roundCount}회차 결과</th></tr>`;
       table.innerHTML += `<tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>`;
 
-      for (let i = 0; i < history.length - 1; i++) {
-        const current = history[i];
-        const next = history[i + 1];
-        const eliminated = current.entries.filter(e => !next.entries.some(n => n.id === e.id)).map(e => e.verb);
-        const label = current.stage === 64 ? '32강 탈락' :
-                      current.stage === 32 ? '16강 탈락' :
-                      current.stage === 16 ? '8강 진출 (선택 안됨)' :
-                      current.stage === 8 ? '4강 진출 (선택 안됨)' :
-                      current.stage === 4 ? '결승 진출 (선택 안됨)' : '';
-        if (label) table.innerHTML += `<tr><th>${label}</th><td>${eliminated.join(', ')}</td></tr>`;
-      }
+      const getEliminated = (prev, next) => prev.filter(e => !next.some(n => n.id === e.id));
+
+      const getByStage = (from, to) => {
+        const fromEntries = history.find(h => h.stage === from)?.entries || [];
+        const toEntries = history.find(h => h.stage === to)?.entries || [];
+        return getEliminated(fromEntries, toEntries).map(e => e.verb);
+      };
+
+      const quarters = getByStage(8, 4);
+      const semis = getByStage(4, 2);
+      const finals = getByStage(2, 1);
+
+      if (finals.length) table.innerHTML += `<tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>`;
+      if (semis.length) table.innerHTML += `<tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>`;
+      if (quarters.length) table.innerHTML += `<tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>`;
 
       container.appendChild(table);
 
-      saveResult(winner.verb, roundCount);
+      saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '), roundCount);
     }
 
-    async function saveResult(final, round_num) {
+    async function saveResult(final, finals, semis, quarters, round_num) {
       const { error } = await client.from('responses').insert([{
         student_id: studentId,
         student_name: studentName,
         round_num,
         final,
-        finals: '',
-        semis: '',
-        quarters: ''
+        finals,
+        semis,
+        quarters
       }]);
       if (error) alert("결과 저장 오류");
     }
@@ -179,6 +190,20 @@
         [arr[i], arr[j]] = [arr[j], arr[i]];
       }
       return arr;
+    }
+
+    window.downloadPDF = async function () {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF('p', 'pt', 'a4');
+      const element = document.getElementById("summaryContainer");
+      await html2canvas(element).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const pageHeight = doc.internal.pageSize.getHeight();
+        const imgHeight = canvas.height * pageWidth / canvas.width;
+        doc.addImage(imgData, 'PNG', 20, 20, pageWidth - 40, imgHeight);
+        doc.save(`${studentId}_${studentName}_결과.pdf`);
+      });
     }
   });
 </script>
