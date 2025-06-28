@@ -10,8 +10,9 @@
     .input-container { margin-top: 150px; }
     .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     .hidden { display: none; }
-    table { margin: 20px auto; border-collapse: collapse; }
-    th, td { border: 1px solid #ccc; padding: 10px; }
+    table { margin: 20px auto 60px auto; border-collapse: collapse; width: 80%; background: #fff; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th[colspan] { background: #f0f0f0; }
   </style>
 </head>
 <body>
@@ -36,7 +37,7 @@
 
 <div id="resultArea">
   <h2>📊 선택 결과 요약</h2>
-  <table id="summaryTable"></table>
+  <div id="summaryContainer"></div>
   <div id="repeatButton">
     <button onclick="startTournament()">한 번 더 진행하기</button>
   </div>
@@ -76,7 +77,7 @@
       if (error) return alert("데이터 불러오기 실패");
 
       allWords = shuffle(data).slice(0, 64);
-      history = [{ stage: 64, list: [...allWords] }];
+      history = [{ stage: 64, entries: [...allWords] }];
       runTournament(allWords);
     };
 
@@ -93,11 +94,9 @@
         if (currentIndex >= entries.length) {
           if (nextRound.length === 1) {
             showResult(nextRound[0]);
-          } else if (nextRound.length > 1) {
-            history.push({ stage: nextRound.length, list: [...nextRound] });
-            runTournament(nextRound);
           } else {
-            alert("선택된 항목이 없습니다. 게임을 종료합니다.");
+            history.push({ stage: nextRound.length, entries: [...nextRound] });
+            runTournament(nextRound);
           }
           return;
         }
@@ -138,20 +137,24 @@
       document.getElementById("resultArea").style.display = "block";
       document.getElementById("repeatButton").style.display = roundCount < 3 ? "block" : "none";
 
-      const summary = document.getElementById("summaryTable");
-      summary.innerHTML += `<tr><th colspan="2">🔁 ${roundCount}회차 결과</th></tr>`;
-      summary.innerHTML += `<tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>`;
+      const container = document.getElementById("summaryContainer");
+      const table = document.createElement("table");
+      table.innerHTML += `<tr><th colspan="2">🔁 ${roundCount}회차 결과</th></tr>`;
+      table.innerHTML += `<tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>`;
 
-      for (let i = history.length - 2; i >= 0; i--) {
-        const stage = history[i].stage;
-        const roundWords = history[i].list;
-        const nextWinners = history[i + 1].list.map(w => w.id);
-        const eliminated = roundWords.filter(w => !nextWinners.includes(w.id)).map(w => w.verb);
-        const label = stage === 2 ? '결승 진출 (선택 안됨)' : stage === 4 ? '4강 진출 (선택 안됨)' : stage === 8 ? '8강 진출 (선택 안됨)' : `${stage}강 탈락`; 
-        if (stage <= 8) {
-          summary.innerHTML += `<tr><th>${label}</th><td>${eliminated.join(', ')}</td></tr>`;
-        }
+      for (let i = 0; i < history.length - 1; i++) {
+        const current = history[i];
+        const next = history[i + 1];
+        const eliminated = current.entries.filter(e => !next.entries.some(n => n.id === e.id)).map(e => e.verb);
+        const label = current.stage === 64 ? '32강 탈락' :
+                      current.stage === 32 ? '16강 탈락' :
+                      current.stage === 16 ? '8강 진출 (선택 안됨)' :
+                      current.stage === 8 ? '4강 진출 (선택 안됨)' :
+                      current.stage === 4 ? '결승 진출 (선택 안됨)' : '';
+        if (label) table.innerHTML += `<tr><th>${label}</th><td>${eliminated.join(', ')}</td></tr>`;
       }
+
+      container.appendChild(table);
 
       saveResult(winner.verb, roundCount);
     }
