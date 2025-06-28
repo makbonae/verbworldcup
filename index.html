@@ -149,7 +149,7 @@
       table.innerHTML += `<tr><th colspan="2">🔁 ${roundCount}회차 결과</th></tr>`;
       table.innerHTML += `<tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>`;
 
-      const getEliminated = (from, to) => from.filter(e => !to.some(n => n.id === e.id)).map(e => e.verb);
+      const getEliminated = (from, to) => from.filter(e => !to.some(n => n.id === e.id));
       const getStage = stage => history.find(h => h.stage === stage)?.entries || [];
 
       const top2 = getStage(2);
@@ -160,9 +160,9 @@
       const semis = getEliminated(top4, top2);
       const quarters = getEliminated(top8, top4);
 
-      table.innerHTML += `<tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>`;
-      table.innerHTML += `<tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>`;
-      table.innerHTML += `<tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>`;
+      if (finals.length) table.innerHTML += `<tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>`;
+      if (semis.length) table.innerHTML += `<tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>`;
+      if (quarters.length) table.innerHTML += `<tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>`;
 
       container.appendChild(table);
 
