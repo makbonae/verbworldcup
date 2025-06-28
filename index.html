@@ -37,15 +37,16 @@
 <body>
 
 <div id="inputArea" class="input-container">
-  <label>학번: <input id="studentId"></label>
-  <label>이름: <input id="studentName"></label>
+  <label style="font-size: 24px;">학번: <input id="studentId"></label>
+  <label style="font-size: 24px;">이름: <input id="studentName"></label>
   <button onclick="showInstructions()">다음</button>
 </div>
 
 <div id="instruction">
-  <p>① 이 게임은 이상형 월드컵 형식으로 진행됩니다.</p>
-  <p>② 선택하는 동사를 클릭해 다음 라운드로 진출시켜 주세요.</p>
-  <p>③ 총 3회까지 참여할 수 있으며, 각 결과는 저장됩니다.</p>
+  <p style="font-size: 28px;">① 이 게임은 이상형 월드컵 형식으로 진행됩니다.</p>
+  <p style="font-size: 28px;">② 선택하는 동사를 클릭해 다음 라운드로 진출시켜 주세요.</p>
+  <p style="font-size: 28px;">③ 총 3회까지 참여할 수 있으며, 각 결과는 저장됩니다.</p>
+  <p> </p>
   <button onclick="startTournament()">시작</button>
 </div>
 
@@ -160,10 +161,10 @@
 
       matchArea.innerHTML = `
         <div class="card" onclick="choose(${currentIndex})">
-          <h3>${left.verb}</h3><p>${left.desc}</p>
+          <h3 style="font-size: 48px;">${left.verb}</h3><p style="font-size: 24px;">${left.desc}</p>
         </div>
         <div class="card" onclick="choose(${currentIndex + 1})">
-          <h3>${right.verb}</h3><p>${right.desc}</p>
+          <h3 style="font-size: 48px;">${right.verb}</h3><p style="font-size: 24px;">${right.desc}</p>
         </div>
       `;
 
@@ -199,9 +200,9 @@
       <h3>🔹 ${roundCount}회차 결과</h3>
       <table>
         <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
-        <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ') || '없음'}</td></tr>
-        <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ') || '없음'}</td></tr>
-        <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ') || '없음'}</td></tr>
+        <tr><th>결승 진출</th><td>${finals.join(', ') || '없음'}</td></tr>
+        <tr><th>4강 진출</th><td>${semis.join(', ') || '없음'}</td></tr>
+        <tr><th>8강 진출</th><td>${quarters.join(', ') || '없음'}</td></tr>
       </table>
     `;
     document.getElementById("summaryWrapper").appendChild(summary);
@@ -255,7 +256,7 @@
     const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
     pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-    pdf.save(`${studentId}_${studentName}_월드컵_결과.pdf`);
+    pdf.save(`${studentId}_${studentName}_능력동사 월드컵_결과.pdf`);
   };
 
 
