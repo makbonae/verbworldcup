@@ -13,7 +13,11 @@
     .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     table { margin: 20px auto; border-collapse: collapse; }
     th, td { border: 1px solid #ccc; padding: 10px; }
-    #pdfButton button { font-size: 18px; padding: 10px 30px; margin-top: 20px; }
+    .round-summary { border: 2px solid #333; margin: 30px auto; width: 80%; background: #fff; padding: 20px; }
+    .round-summary h3 { margin-bottom: 10px; }
+    #pdfButton button, .next-round-btn {
+      font-size: 18px; padding: 10px 30px; margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -27,7 +31,7 @@
 <div id="instruction">
   <p>① 이 게임은 이상형 월드컵 형식으로 진행됩니다.</p>
   <p>② 선택하는 동사를 클릭해 다음 라운드로 진출시켜 주세요.</p>
-  <p>③ 3번까지 참여 가능하며 결과가 저장됩니다.</p>
+  <p>③ 총 3회까지 참여할 수 있으며, 각 결과는 저장됩니다.</p>
   <button onclick="startTournament()">시작</button>
 </div>
 
@@ -37,7 +41,7 @@
 </div>
 
 <div id="resultArea">
-  <h2>📊 선택 결과 요약 (<span id="roundCounter"></span>회차)</h2>
+  <h2>📊 선택 결과 요약</h2>
   <div id="summaryWrapper"></div>
 </div>
 
@@ -132,41 +136,43 @@
     document.getElementById("tournament").style.display = "none";
     document.getElementById("resultArea").style.display = "block";
 
-    // 각 라운드별 탈락자만 수집 (중복 없이)
+    // 탈락자만 모으기
     function getLosers(roundIndex) {
       const round = resultsByRound.at(roundIndex) || [];
-      return [...new Set(
-        round.map(r => r.loser).filter(w => w.id !== winner.id).map(w => w.verb)
-      )];
+      return [...new Set(round.map(r => r.loser).filter(w => w.id !== winner.id).map(w => w.verb))];
     }
 
     const finals = getLosers(-1);
     const semis = getLosers(-2);
     const quarters = getLosers(-3);
 
-    const summary = document.createElement("table");
+    const summary = document.createElement("div");
+    summary.className = "round-summary";
     summary.innerHTML = `
-      <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
-      <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ') || '없음'}</td></tr>
-      <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ') || '없음'}</td></tr>
-      <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ') || '없음'}</td></tr>
-  `  ;
-    document.getElementById("summaryWrapper").appendChild(summary);
-    document.getElementById("roundCounter").innerText = roundCount;
+      <h3>🔹 ${roundCount}회차 결과</h3>
+      <table>
+        <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
+        <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ') || '없음'}</td></tr>
+        <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ') || '없음'}</td></tr>
+        <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ') || '없음'}</td></tr>
+      </table>
+    `;
 
+    document.getElementById("summaryWrapper").appendChild(summary);
     saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '));
 
+    // 다음 라운드 or PDF
+    const nextBtn = document.createElement("button");
+    nextBtn.className = "next-round-btn";
     if (roundCount < 3) {
-      const nextBtn = document.createElement("button");
-      nextBtn.innerText = `👉 ${roundCount + 1}회차 다시 시작`;
-      nextBtn.style.marginTop = "20px";
+      nextBtn.innerText = `👉 결과 저장하고 한 번 더! (${roundCount + 1}회차)`;
       nextBtn.onclick = () => {
         roundCount++;
-        document.getElementById("summaryWrapper").innerHTML = '';
-        document.getElementById("resultArea").style.display = "none";
+        summary.appendChild(document.createTextNode("")); // force reflow
+        nextBtn.remove();
         startTournament();
       };
-      document.getElementById("resultArea").appendChild(nextBtn);
+      summary.appendChild(nextBtn);
     } else {
       document.getElementById("pdfButton").style.display = "block";
     }
@@ -185,6 +191,17 @@
     if (error) alert("결과 저장 오류");
   }
 
+  window.downloadPDF = async () => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    const result = await html2canvas(document.getElementById("resultArea"));
+    const imgData = result.toDataURL("image/png");
+    const pdfWidth = doc.internal.pageSize.getWidth();
+    const pdfHeight = (imgData.height * pdfWidth) / imgData.width;
+    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    doc.save(`${studentId}_${studentName}_월드컵_결과.pdf`);
+  };
+
   function shuffle(array) {
     let arr = [...array];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -193,20 +210,6 @@
     }
     return arr;
   }
-
-  window.downloadPDF = async () => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    const result = await html2canvas(document.getElementById("resultArea"));
-    const imgData = result.toDataURL("image/png");
-    const imgProps = doc.getImageProperties(imgData);
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    doc.save(`${studentId}_${studentName}_월드컵_결과.pdf`);
-  };
 </script>
 
 </body>
