@@ -238,14 +238,26 @@
 
   window.downloadPDF = async () => {
     const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    const result = await html2canvas(document.getElementById("resultArea"));
-    const imgData = result.toDataURL("image/png");
-    const pdfWidth = doc.internal.pageSize.getWidth();
-    const pdfHeight = (imgData.height * pdfWidth) / imgData.width;
-    doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-    doc.save(`${studentId}_${studentName}_월드컵_결과.pdf`);
+
+    const element = document.getElementById("resultArea");
+
+    const canvas = await html2canvas(element, {
+      scale: 1, // 해상도 개선
+      useCORS: true,
+      allowTaint: true,
+      scrollY: -window.scrollY // 스크롤 위치로 인한 잘림 방지
+    });
+
+    const imgData = canvas.toDataURL("image/png");
+    const pdf = new jsPDF("p", "mm", "a4");
+
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(`${studentId}_${studentName}_월드컵_결과.pdf`);
   };
+
 
   function shuffle(array) {
     let arr = [...array];
