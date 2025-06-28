@@ -70,7 +70,7 @@
   };
 
   window.startTournament = async function () {
-    // 이전 결과 화면에서 숨기기
+    // ✅ 이전 라운드 결과는 화면에서 숨기되 삭제는 안 함
     document.querySelectorAll(".round-summary").forEach(el => el.style.display = 'none');
     document.getElementById("instruction").style.display = "none";
     document.getElementById("tournament").style.display = "block";
@@ -140,6 +140,9 @@
     document.getElementById("tournament").style.display = "none";
     document.getElementById("resultArea").style.display = "block";
 
+    // ✅ 이전 결과 다시 보이기
+    document.querySelectorAll(".round-summary").forEach(el => el.style.display = 'block');
+
     function getLosers(roundIndex) {
       const round = resultsByRound.at(roundIndex) || [];
       return [...new Set(round.map(r => r.loser).filter(w => w.id !== winner.id).map(w => w.verb))];
@@ -151,6 +154,7 @@
 
     const summary = document.createElement("div");
     summary.className = "round-summary";
+    summary.setAttribute("data-round", roundCount);
     summary.innerHTML = `
       <h3>🔹 ${roundCount}회차 결과</h3>
       <table>
@@ -170,8 +174,7 @@
       nextBtn.innerText = `👉 결과 저장하고 한 번 더! (${roundCount + 1}회차)`;
       nextBtn.onclick = () => {
         roundCount++;
-        summary.style.display = "none";
-        nextBtn.remove();
+        document.getElementById("resultArea").style.display = "none";
         startTournament();
       };
       summary.appendChild(nextBtn);
