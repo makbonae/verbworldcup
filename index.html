@@ -9,7 +9,7 @@
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 0; }
     #inputArea, #instruction, #tournament, #resultArea, #pdfButton, #nextRoundArea, #roundLoading { display: none; margin-top: 50px; }
-    .input-container { margin-top: 150px; }
+    .input-container { margin-top: 150px; height: 40px; }
     .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     table { margin: 20px auto; border-collapse: collapse; }
     th, td { border: 1px solid #ccc; padding: 10px; }
@@ -39,7 +39,7 @@
 <div id="inputArea" class="input-container">
   <label style="font-size: 24px;">학번: <input id="studentId"></label>
   <label style="font-size: 24px;">이름: <input id="studentName"></label>
-  <button onclick="showInstructions()">다음</button>
+  <button style="height:40px; font-size:24px;" onclick="showInstructions()">다음</button>
 </div>
 
 <div id="instruction">
