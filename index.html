@@ -8,7 +8,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 0; }
-    #inputArea, #instruction, #tournament, #resultArea, #pdfButton, #nextRoundArea { display: none; margin-top: 50px; }
+    #inputArea, #instruction, #tournament, #resultArea, #pdfButton, #nextRoundArea, #roundLoading { display: none; margin-top: 50px; }
     .input-container { margin-top: 150px; }
     .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     table { margin: 20px auto; border-collapse: collapse; }
@@ -17,6 +17,21 @@
     .round-summary h3 { margin-bottom: 10px; }
     #pdfButton button, #nextRoundBtn {
       font-size: 18px; padding: 10px 30px; margin-top: 20px;
+    }
+    /* 🌀 스피너 스타일 */
+    .spinner {
+      margin: 0 auto;
+      border: 12px solid #f3f3f3;
+      border-top: 12px solid #3498db;
+      border-radius: 50%;
+      width: 80px;
+      height: 80px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -33,6 +48,12 @@
   <p>② 선택하는 동사를 클릭해 다음 라운드로 진출시켜 주세요.</p>
   <p>③ 총 3회까지 참여할 수 있으며, 각 결과는 저장됩니다.</p>
   <button onclick="startTournament()">시작</button>
+</div>
+
+<!-- 🌀 로딩 중 화면 -->
+<div id="roundLoading">
+  <div class="spinner"></div>
+  <p id="loadingText" style="font-size:32px; font-weight:bold; margin-top:20px;"></p>
 </div>
 
 <div id="tournament">
@@ -74,13 +95,9 @@
   };
 
   window.startTournament = async function () {
-    // 결과 숨기기
     document.querySelectorAll(".round-summary").forEach(el => el.style.display = 'none');
     document.getElementById("resultArea").style.display = "none";
     document.getElementById("nextRoundArea").style.display = "none";
-
-    document.getElementById("instruction").style.display = "none";
-    document.getElementById("tournament").style.display = "block";
 
     const { data, error } = await client.from('wordlist').select();
     if (error) return alert("데이터 불러오기 실패");
@@ -97,7 +114,19 @@
     let currentIndex = 0;
     const roundResults = [];
 
-    roundTitle.innerText = `${entries.length}강`;
+    const roundName = entries.length === 2 ? '결승' : `${entries.length}강`;
+
+    // 🌀 로딩 화면 표시
+    document.getElementById("tournament").style.display = "none";
+    document.getElementById("loadingText").innerText = `${roundName} 로딩 중...`;
+    document.getElementById("roundLoading").style.display = "block";
+
+    setTimeout(() => {
+      document.getElementById("roundLoading").style.display = "none";
+      document.getElementById("tournament").style.display = "block";
+      roundTitle.innerText = roundName;
+      showMatch();
+    }, 2000);
 
     function showMatch() {
       if (currentIndex >= entries.length) {
@@ -138,15 +167,11 @@
         setTimeout(showMatch, 100);
       };
     }
-
-    showMatch();
   }
 
   function showResult(winner) {
     document.getElementById("tournament").style.display = "none";
     document.getElementById("resultArea").style.display = "block";
-
-    // 이전 요약 다시 보이기
     document.querySelectorAll(".round-summary").forEach(el => el.style.display = 'block');
 
     function getLosers(roundIndex) {
