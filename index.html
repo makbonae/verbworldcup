@@ -8,14 +8,14 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 0; }
-    #inputArea, #instruction, #tournament, #resultArea, #pdfButton { display: none; margin-top: 50px; }
+    #inputArea, #instruction, #tournament, #resultArea, #pdfButton, #nextRoundArea { display: none; margin-top: 50px; }
     .input-container { margin-top: 150px; }
     .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     table { margin: 20px auto; border-collapse: collapse; }
     th, td { border: 1px solid #ccc; padding: 10px; }
     .round-summary { border: 2px solid #333; margin: 30px auto; width: 80%; background: #fff; padding: 20px; }
     .round-summary h3 { margin-bottom: 10px; }
-    #pdfButton button, .next-round-btn {
+    #pdfButton button, #nextRoundBtn {
       font-size: 18px; padding: 10px 30px; margin-top: 20px;
     }
   </style>
@@ -45,6 +45,10 @@
   <div id="summaryWrapper"></div>
 </div>
 
+<div id="nextRoundArea">
+  <button id="nextRoundBtn" class="next-round-btn">👉 결과 저장하고 한 번 더! (2회차)</button>
+</div>
+
 <div id="pdfButton">
   <button onclick="downloadPDF()">📄 결과 PDF 저장</button>
 </div>
@@ -70,11 +74,13 @@
   };
 
   window.startTournament = async function () {
-    // ✅ 이전 라운드 결과는 화면에서 숨기되 삭제는 안 함
+    // 결과 숨기기
     document.querySelectorAll(".round-summary").forEach(el => el.style.display = 'none');
+    document.getElementById("resultArea").style.display = "none";
+    document.getElementById("nextRoundArea").style.display = "none";
+
     document.getElementById("instruction").style.display = "none";
     document.getElementById("tournament").style.display = "block";
-    document.getElementById("resultArea").style.display = "none";
 
     const { data, error } = await client.from('wordlist').select();
     if (error) return alert("데이터 불러오기 실패");
@@ -140,7 +146,7 @@
     document.getElementById("tournament").style.display = "none";
     document.getElementById("resultArea").style.display = "block";
 
-    // ✅ 이전 결과 다시 보이기
+    // 이전 요약 다시 보이기
     document.querySelectorAll(".round-summary").forEach(el => el.style.display = 'block');
 
     function getLosers(roundIndex) {
@@ -167,18 +173,18 @@
     document.getElementById("summaryWrapper").appendChild(summary);
     saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '));
 
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "next-round-btn";
+    const nextBtn = document.getElementById("nextRoundBtn");
+    const nextArea = document.getElementById("nextRoundArea");
 
     if (roundCount < 3) {
       nextBtn.innerText = `👉 결과 저장하고 한 번 더! (${roundCount + 1}회차)`;
       nextBtn.onclick = () => {
         roundCount++;
-        document.getElementById("resultArea").style.display = "none";
         startTournament();
       };
-      summary.appendChild(nextBtn);
+      nextArea.style.display = "block";
     } else {
+      nextArea.style.display = "none";
       document.getElementById("pdfButton").style.display = "block";
     }
   }
