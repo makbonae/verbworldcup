@@ -6,7 +6,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 0; }
-    #inputArea, #instruction, #tournament, #resultArea { display: none; margin-top: 50px; }
+    #inputArea, #instruction, #tournament, #resultArea, #repeatButton { display: none; margin-top: 50px; }
     .input-container { margin-top: 150px; }
     .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     .hidden { display: none; }
@@ -37,6 +37,9 @@
 <div id="resultArea">
   <h2>📊 선택 결과 요약</h2>
   <table id="summaryTable"></table>
+  <div id="repeatButton">
+    <button onclick="startTournament()">한 번 더 진행하기</button>
+  </div>
 </div>
 
 <script>
@@ -48,6 +51,7 @@
     let studentId = '';
     let studentName = '';
     let allWords = [];
+    let roundCount = 0;
 
     document.getElementById("inputArea").style.display = "block";
 
@@ -60,13 +64,17 @@
     };
 
     window.startTournament = async function () {
+      if (roundCount >= 3) return alert("최대 3번까지만 참여할 수 있습니다.");
+
       document.getElementById("instruction").style.display = "none";
+      document.getElementById("resultArea").style.display = "none";
       document.getElementById("tournament").style.display = "block";
+      document.getElementById("summaryTable").innerHTML = "";
+      document.getElementById("repeatButton").style.display = "none";
+
       const { data, error } = await client.from('wordlist').select();
-    
-      console.log("불러온 데이터 수:", data?.length);
-      
       if (error) return alert("데이터 불러오기 실패");
+
       allWords = shuffle(data).slice(0, 64);
       runTournament(allWords);
     };
@@ -115,7 +123,7 @@
           const winner = entries[chosenIndex];
           nextRound.push(winner);
           currentIndex += 2;
-          setTimeout(showMatch, 100); // 💡 stack overflow 방지
+          setTimeout(showMatch, 100);
         };
       }
 
@@ -123,29 +131,33 @@
     }
 
     function showResult(winner) {
+      roundCount++;
       document.getElementById("tournament").style.display = "none";
       document.getElementById("resultArea").style.display = "block";
+      document.getElementById("repeatButton").style.display = roundCount < 3 ? "block" : "none";
 
       const quarters = allWords.slice(0, 8).filter(w => w.id !== winner.id).map(w => w.verb);
       const semis = allWords.slice(0, 4).filter(w => w.id !== winner.id).map(w => w.verb);
       const finals = allWords.slice(0, 2).filter(w => w.id !== winner.id).map(w => w.verb);
 
       const table = document.getElementById("summaryTable");
-      table.innerHTML = `
+      const newRows = `
+        <tr><th>🔁 ${roundCount}회차 결과</th><td></td></tr>
         <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
         <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>
         <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>
         <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>
       `;
+      table.innerHTML += newRows;
 
-      saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '));
+      saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '), roundCount);
     }
 
-    async function saveResult(final, finals, semis, quarters) {
+    async function saveResult(final, finals, semis, quarters, round_num) {
       const { error } = await client.from('responses').insert([{
         student_id: studentId,
         student_name: studentName,
-        round_num: 1,
+        round_num,
         final,
         finals,
         semis,
@@ -164,6 +176,5 @@
     }
   });
 </script>
-
 </body>
 </html>
