@@ -52,6 +52,7 @@
     let studentName = '';
     let allWords = [];
     let roundCount = 0;
+    let history = [];
 
     document.getElementById("inputArea").style.display = "block";
 
@@ -69,13 +70,13 @@
       document.getElementById("instruction").style.display = "none";
       document.getElementById("resultArea").style.display = "none";
       document.getElementById("tournament").style.display = "block";
-      document.getElementById("summaryTable").innerHTML = "";
       document.getElementById("repeatButton").style.display = "none";
 
       const { data, error } = await client.from('wordlist').select();
       if (error) return alert("데이터 불러오기 실패");
 
       allWords = shuffle(data).slice(0, 64);
+      history = [{ stage: 64, list: [...allWords] }];
       runTournament(allWords);
     };
 
@@ -93,6 +94,7 @@
           if (nextRound.length === 1) {
             showResult(nextRound[0]);
           } else if (nextRound.length > 1) {
+            history.push({ stage: nextRound.length, list: [...nextRound] });
             runTournament(nextRound);
           } else {
             alert("선택된 항목이 없습니다. 게임을 종료합니다.");
@@ -136,32 +138,33 @@
       document.getElementById("resultArea").style.display = "block";
       document.getElementById("repeatButton").style.display = roundCount < 3 ? "block" : "none";
 
-      const quarters = allWords.slice(0, 8).filter(w => w.id !== winner.id).map(w => w.verb);
-      const semis = allWords.slice(0, 4).filter(w => w.id !== winner.id).map(w => w.verb);
-      const finals = allWords.slice(0, 2).filter(w => w.id !== winner.id).map(w => w.verb);
+      const summary = document.getElementById("summaryTable");
+      summary.innerHTML += `<tr><th colspan="2">🔁 ${roundCount}회차 결과</th></tr>`;
+      summary.innerHTML += `<tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>`;
 
-      const table = document.getElementById("summaryTable");
-      const newRows = `
-        <tr><th>🔁 ${roundCount}회차 결과</th><td></td></tr>
-        <tr><th>🏆 최종 우승</th><td>${winner.verb}</td></tr>
-        <tr><th>결승 진출 (선택 안됨)</th><td>${finals.join(', ')}</td></tr>
-        <tr><th>4강 진출 (선택 안됨)</th><td>${semis.join(', ')}</td></tr>
-        <tr><th>8강 진출 (선택 안됨)</th><td>${quarters.join(', ')}</td></tr>
-      `;
-      table.innerHTML += newRows;
+      for (let i = history.length - 2; i >= 0; i--) {
+        const stage = history[i].stage;
+        const roundWords = history[i].list;
+        const nextWinners = history[i + 1].list.map(w => w.id);
+        const eliminated = roundWords.filter(w => !nextWinners.includes(w.id)).map(w => w.verb);
+        const label = stage === 2 ? '결승 진출 (선택 안됨)' : stage === 4 ? '4강 진출 (선택 안됨)' : stage === 8 ? '8강 진출 (선택 안됨)' : `${stage}강 탈락`; 
+        if (stage <= 8) {
+          summary.innerHTML += `<tr><th>${label}</th><td>${eliminated.join(', ')}</td></tr>`;
+        }
+      }
 
-      saveResult(winner.verb, finals.join(', '), semis.join(', '), quarters.join(', '), roundCount);
+      saveResult(winner.verb, roundCount);
     }
 
-    async function saveResult(final, finals, semis, quarters, round_num) {
+    async function saveResult(final, round_num) {
       const { error } = await client.from('responses').insert([{
         student_id: studentId,
         student_name: studentName,
         round_num,
         final,
-        finals,
-        semis,
-        quarters
+        finals: '',
+        semis: '',
+        quarters: ''
       }]);
       if (error) alert("결과 저장 오류");
     }
