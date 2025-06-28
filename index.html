@@ -28,7 +28,6 @@
       height: 80px;
       animation: spin 1s linear infinite;
     }
-
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -50,7 +49,7 @@
   <button onclick="startTournament()">시작</button>
 </div>
 
-<!-- 🌀 로딩 중 화면 -->
+<!-- 🌀 로딩 화면 -->
 <div id="roundLoading">
   <div class="spinner"></div>
   <p id="loadingText" style="font-size:32px; font-weight:bold; margin-top:20px;"></p>
@@ -76,7 +75,7 @@
 
 <script>
   const SUPABASE_URL = 'https://nsfmxmtphiphxevfueua.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5zZm14bXRwaGlwaHhldmZ1ZXVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTA5MzcyNDgsImV4cCI6MjA2NjUxMzI0OH0.N5w7lrlujJq0Jb_CliL0DRqitv3U0TZwyK7s2IcF1NE';
+  const SUPABASE_KEY = 'YOUR_SUPABASE_API_KEY_HERE'; // 보안을 위해 실제 사용 시 환경변수로
   const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let studentId = '', studentName = '', allWords = [];
@@ -96,7 +95,11 @@
 
   window.startTournament = async function () {
     document.querySelectorAll(".round-summary").forEach(el => el.style.display = 'none');
+    document.getElementById("inputArea").style.display = "none";
+    document.getElementById("instruction").style.display = "none";
+    document.getElementById("tournament").style.display = "none";
     document.getElementById("resultArea").style.display = "none";
+    document.getElementById("pdfButton").style.display = "none";
     document.getElementById("nextRoundArea").style.display = "none";
 
     const { data, error } = await client.from('wordlist').select();
@@ -116,8 +119,14 @@
 
     const roundName = entries.length === 2 ? '결승' : `${entries.length}강`;
 
-    // 🌀 로딩 화면 표시
+    // 🌀 로딩 화면만 표시
+    document.getElementById("inputArea").style.display = "none";
+    document.getElementById("instruction").style.display = "none";
     document.getElementById("tournament").style.display = "none";
+    document.getElementById("resultArea").style.display = "none";
+    document.getElementById("pdfButton").style.display = "none";
+    document.getElementById("nextRoundArea").style.display = "none";
+
     document.getElementById("loadingText").innerText = `${roundName} 로딩 중...`;
     document.getElementById("roundLoading").style.display = "block";
 
