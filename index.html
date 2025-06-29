@@ -9,7 +9,10 @@
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 0; }
     #inputArea, #instruction, #tournament, #resultArea, #pdfButton, #nextRoundArea, #roundLoading { display: none; margin-top: 50px; }
-    .input-container { margin-top: 150px;}
+    .input-container { display: flex; flex-direction: column; align-items: center; gap: 16px; margin-top: 150px;}
+    .input-container label { display: block; font-size: 24px; height: 40px;}
+    .input-container input {font-size: 24px; height: 40px; }
+    .input-container button {font-size: 24px; height: 40px; padding: 1px 10px;}
     .card-container { display: flex; gap: 20px;}
     .card { flex: 1; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; display: flex; flex-direction: column;}
     table { margin: 20px auto; border-collapse: collapse; }
@@ -40,9 +43,9 @@
 <body>
 
 <div id="inputArea" class="input-container">
-  <label style="height:40px; font-size:24px;">학번: <input id="studentId" style="height:40px; font-size:24px;"></label>
-  <label style="height:40px; font-size:24px;">이름: <input id="studentName" style="height:40px; font-size:24px;"></label>
-  <button style="height:40px; font-size:24px; padding: 10px;" onclick="showInstructions()">다음</button>
+  <label for="studentId">학번: <input id="studentId" type="text"></label>
+  <label for="studentName">이름: <input id="studentName" ype="text"></label>
+  <button onclick="showInstructions()">다음</button>
 </div>
 
 <div id="instruction" style="text-align: left; padding: 1.5em;">
@@ -50,7 +53,7 @@
   <p style="font-size: 28px;">② 선택하는 동사를 클릭해 다음 라운드로 진출시켜 주세요.</p>
   <p style="font-size: 28px;">③ 총 3회까지 참여할 수 있으며, 각 결과는 저장됩니다.</p>
   <p> </p>
-  <button style="height:40px; font-size:24px; padding: 10px;" onclick="startTournament()">시작</button>
+  <button style="height:40px; font-size:24px; padding: 1px 10px;" onclick="startTournament()">시작</button>
 </div>
 
 <!-- 🌀 로딩 화면 -->
