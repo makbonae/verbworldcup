@@ -9,8 +9,9 @@
   <style>
     body { font-family: sans-serif; text-align: center; background: #f4f4f4; margin: 0; padding: 0; }
     #inputArea, #instruction, #tournament, #resultArea, #pdfButton, #nextRoundArea, #roundLoading { display: none; margin-top: 50px; }
-    .input-container { margin-top: 150px; height: 40px; font-size: 24px; padding: 0 12px; }
-    .card { display: inline-block; width: 40%; margin: 20px; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
+    .input-container { margin-top: 150px;}
+    .card-container { display: flex; gap: 20px;}
+    .card { flex: 1; padding: 20px; border: 1px solid #ccc; background: #fff; cursor: pointer; display: flex; flex-direction: column;}
     table { margin: 20px auto; border-collapse: collapse; }
     th, td { border: 1px solid #ccc; padding: 10px; }
     .round-summary { border: 2px solid #333; margin: 30px auto; width: 80%; background: #fff; padding: 20px; }
@@ -160,11 +161,13 @@
       }
 
       matchArea.innerHTML = `
-        <div class="card" onclick="choose(${currentIndex})">
-          <h3 style="font-size: 48px;">${left.verb}</h3><p style="font-size: 24px;">${left.desc}</p>
-        </div>
-        <div class="card" onclick="choose(${currentIndex + 1})">
-          <h3 style="font-size: 48px;">${right.verb}</h3><p style="font-size: 24px;">${right.desc}</p>
+        <div class="card-container">,
+          <div class="card" onclick="choose(${currentIndex})">
+            <h3 style="font-size: 48px;">${left.verb}</h3><p style="font-size: 24px;">${left.desc}</p>
+          </div>
+          <div class="card" onclick="choose(${currentIndex + 1})">
+            <h3 style="font-size: 48px;">${right.verb}</h3><p style="font-size: 24px;">${right.desc}</p>
+          </div>
         </div>
       `;
 
